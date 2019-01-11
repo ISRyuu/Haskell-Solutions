@@ -1,5 +1,5 @@
-import Data.List
-import Data.Char
+import Data.List (group, sort, elemIndex)
+import Data.Char (isUpper, toLower)
 import System.IO
 
 
@@ -36,8 +36,22 @@ cellPhonesDead :: DaPhone -> String -> [(Digit, Press)]
 cellPhonesDead d = concat . map (reverseTaps d)
 
 fingerTaps :: [(Digit, Press)] -> Press
-fingerTaps = undefined
-  
+fingerTaps = foldr (\(_, x) b -> x + b) 0
+
+mostPopularElem :: (Eq a, Ord a) => [a] -> (Int, a)
+mostPopularElem = maximum . map (\x -> (length x, head x)) . group . sort
+
+mostPopularLetterCost :: DaPhone -> String -> Int
+mostPopularLetterCost p = go . mostPopularElem
+  where
+    go (n, c) = n * (foldr ((+) . snd) 0 $ (reverseTaps p c))
+
+coolestLtr :: [String] -> Char
+coolestLtr = snd . maximum . map mostPopularElem
+
+coolestWord :: [String] -> String
+coolestWord = snd . maximum . map (mostPopularElem . words)
+
 convo :: [String]
 convo = [
   "Wanna play 20 questions",
@@ -52,4 +66,12 @@ convo = [
   ]
 
 
-main = print $ map (cellPhonesDead $ makeDaPhone myPhone) convo
+main = do
+  let x = map (cellPhonesDead $ phone) convo
+      phone = makeDaPhone myPhone
+  print x
+  print $ map fingerTaps x
+  print $ map mostPopularElem convo
+  print $ map (mostPopularLetterCost phone) convo
+  print $ coolestLtr convo
+  print $ coolestWord convo  
