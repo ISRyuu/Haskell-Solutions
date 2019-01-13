@@ -13,8 +13,4 @@ sentences ('.':xs) = "." : sentences xs
 sentences p = takeWhile (/='.') p : sentences (dropWhile (/='.') p)
 
 capitalizeParagraph' :: String -> String
-capitalizeParagraph' = concat . map capitalizeWord' . sentences
-
-capitalizeParagraph :: String -> String
-capitalizeParagraph = go True
-  where go x y = 
+capitalizeParagraph' = concat . map capitalizeWord . sentences
