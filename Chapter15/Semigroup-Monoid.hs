@@ -35,7 +35,7 @@ newtype Identity a = Identity a deriving (Show, Eq)
 
 instance Semigroup a => Semigroup (Identity a) where
   (Identity x) <> (Identity y) = Identity (x <> y)
-
+  
 instance Monoid a => Monoid (Identity a) where
   mempty = Identity mempty
 
@@ -176,10 +176,10 @@ instance Show (Combine a b) where
   show = \_ -> "Combine a b"
 
 instance Semigroup b => Semigroup (Combine a b) where
-  x <> y = Combine $ \t -> (unCombine x $ t) <> (unCombine y $ t)
+  x <> y = Combine $ \t -> (unCombine x t) <> (unCombine y t)
 
 instance Monoid b => Monoid (Combine a b) where
-  mempty = Combine id
+  mempty = Combine $ \_ -> mempty
 
 combineAssoc :: (Eq b, Semigroup b)
              => (Combine a b)
@@ -189,12 +189,15 @@ combineAssoc :: (Eq b, Semigroup b)
              -> Bool
              
 combineAssoc f g z x =
-  (unCombine f $ x) <> (unCombine (g <> z) $ x)
-  == (unCombine (f <> g) $ x) <> (unCombine z $ x)
-
+  unCombine f x <> unCombine (g <> z) x
+  == unCombine (f <> g) x <> unCombine z x
+ 
 combineLeftIdentity f x =
-  (unCombine (f <> mempty) $ x) == x
+  unCombine (mempty <> f) x == unCombine f x
 
+combineRightIdentity f x =
+  unCombine (f <> mempty) x == unCombine f x
+   
 -- 10
 
 newtype Comp a =
@@ -205,7 +208,10 @@ instance Show (Comp a) where
   show = \_ -> "Comp a b"
 
 instance Semigroup a => Semigroup (Comp a) where
-  x <> y = Comp $ \t -> (unComp x $ t) <> (unComp y $ t)
+  x <> y = Comp $ \t -> (unComp x t) <> (unComp y t)
+
+instance Monoid a => Monoid (Comp a) where
+  mempty = Comp $ \_ -> mempty
 
 compAssoc :: (Eq a, Semigroup a)
           => (Comp a)
@@ -214,9 +220,15 @@ compAssoc :: (Eq a, Semigroup a)
           -> a
           -> Bool
 compAssoc f g z x =
-  (unComp f $ x) <> (unComp (g <> z) $ x)
-  == (unComp (f <> g) $ x) <> (unComp z $ x)
+  unComp f x <> unComp (g <> z) x
+  == unComp (f <> g) x <> unComp z x
 
+compLeftIdentity f x =
+  unComp (mempty <> f) x == unComp f x
+
+compRightIdentity f x =
+  unComp (f <> mempty) x == unComp f x
+  
 -- 11
 
 data Validation a b =
@@ -274,6 +286,25 @@ instance (Arbitrary a, Arbitrary b) => Arbitrary (AccumulateBoth a b) where
            return $ AccumulateBoth (Success' b)]
 
 
+-- monoid 8
+
+newtype Mem s a =
+  Mem {
+    runMem :: s -> (a, s)
+  } 
+
+instance Semigroup a => Semigroup (Mem s a) where
+  Mem f <> Mem g = Mem $ \t -> let
+    (x, y) = g t
+    (x', y') = f y
+    in (x <> x', y')
+
+
+instance Monoid a => Monoid (Mem s a) where
+  mempty = Mem $ \t -> (mempty, t)
+
+f' = Mem $ \s -> ("hi", s + 1)
+
 main :: IO ()
 main = do
   putStrLn "1 semigroup"
@@ -317,8 +348,8 @@ main = do
                            -> Int
                            -> Bool)
   putStrLn "6 monoid"
-  quickCheck (monoidLeftIdentiy :: Combine Int String -> Bool)
-  quickCheck (monoidRightIdentiy :: Combine Int String -> Bool)
+  quickCheck (combineLeftIdentity :: Combine Int String -> Int -> Bool)
+  quickCheck (combineRightIdentity :: Combine Int String -> Int -> Bool)
   putStrLn "10 semigroup"    
   quickCheck (compAssoc :: Comp String
                         -> Comp String
@@ -340,3 +371,13 @@ main = do
                              -> AccumulateBoth String String
                              -> AccumulateBoth String String
                              -> Bool)
+  putStrLn "7 monoid"
+  quickCheck (compLeftIdentity :: Comp String -> String -> Bool)
+  quickCheck (compRightIdentity :: Comp String -> String -> Bool)
+
+  putStrLn "8 monoid"
+  print $ runMem (f' <> mempty) 0
+  print $ runMem (mempty <> f') 0
+  print $ (runMem mempty 0 :: (String, Int))
+  print $ runMem (f' <> mempty) 0 == runMem f' 0
+  print $ runMem (mempty <> f') 0 == runMem f' 0
