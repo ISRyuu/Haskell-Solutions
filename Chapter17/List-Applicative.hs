@@ -32,14 +32,21 @@ instance Monoid (List a) where
   mempty = Nil
 
 instance Functor List where
-  fmap f = (pure f <*>)
+  fmap _ Nil = Nil
+  fmap f (Cons x xs) = Cons (f x) (fmap f xs)
   
 instance Applicative List where
   pure x = Cons x Nil
   (<*>) Nil _ = Nil
   (<*>) _ Nil = Nil
-  (<*>) (Cons f fs) (Cons x xs) =
-    Cons (f x) (pure f <*> xs) <> (fs <*> xs)
+  (<*>) (Cons f fs) xs = (fmap f xs) <> (fs <*> xs) 
+
+instance Eq a => EqProp (List a) where (=-=) = eq
+
+instance Arbitrary a => Arbitrary (List a) where
+  arbitrary = fromList <$> arbitrary
   
 main :: IO ()
-main = quickBatch $ applicative (Cons "lll" Nil)
+main = do
+ let trigger = undefined :: List (String, String, Int)
+ quickBatch $ applicative trigger
