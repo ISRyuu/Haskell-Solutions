@@ -69,7 +69,7 @@ instance Monoid (ZipList' a) where
 instance Functor ZipList' where
   fmap f (ZipList' x) = ZipList' $ fmap f x
 
--- This is my original solution, which has two error.
+-- This is my original solution, which has two errors.
 --
 -- One is `pure x` of ZipList should be an infinite list `ZipList [x,x,x,x,x...]`,
 -- instead of `ZipList [x]`, see
@@ -100,7 +100,6 @@ zipWith' f (Cons x xs) (Cons y ys) = Cons (f x y) (zipWith' f xs ys)
 
 instance Arbitrary a => Arbitrary (ZipList' a) where
   arbitrary = ZipList' <$> arbitrary
-
   
 main :: IO ()
 main = do
