@@ -14,7 +14,8 @@ instance Functor (Moi s) where
   fmap f (Moi g) = Moi $ 
     \r -> let (a, s) = g r
           in (f a, s)
-    
+   
+-- https://stackoverflow.com/questions/45154169/applicative-instance-for-state-order-of-data-flow
 instance Applicative (Moi s) where
   pure :: a -> Moi s a
   pure a = Moi $ \s -> (a, s)
@@ -24,8 +25,8 @@ instance Applicative (Moi s) where
         -> Moi s b
   (Moi f) <*> (Moi g) = Moi $
     \s ->
-      let (a, s') = g s
-          (f', s'') = f s'
+      let (f', s') = f s
+          (a', s'') = g s'
       in (f' a, s'')
 
 instance Monad (Moi s) where
