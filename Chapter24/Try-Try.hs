@@ -7,12 +7,12 @@ type IntegerOrFraction =
 
 parseFraction :: Parser Rational
 parseFraction = do
-  a <- decimal
-  skipMany $ oneOf (" ")
+  a <- integer
   char '/'
-  skipMany $ oneOf (" ")
-  b <- decimal
-  return (a % b)
+  b <- integer
+  case b of
+    0 -> fail "divide by zero error"
+    _ -> return (a % b)
 
 parseIntegerOrFraction :: Parser IntegerOrFraction
 parseIntegerOrFraction = (try $ Right <$> parseFraction) <|> (Left <$> decimal)
