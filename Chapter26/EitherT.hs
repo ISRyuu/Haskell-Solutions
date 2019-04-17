@@ -1,4 +1,8 @@
+{-# LANGUAGE InstanceSigs #-}
+
 import Control.Applicative
+import Control.Monad.Trans.Class
+import Control.Monad
 
 newtype EitherT e m a =
   EitherT {runEitherT :: m (Either e a)} 
@@ -32,3 +36,7 @@ eitherT :: Monad m =>
         -> EitherT a m b
         -> m c
 eitherT f g (EitherT mab) = mab >>= either f g
+
+instance MonadTrans (EitherT e) where
+  lift :: Monad m => m a -> EitherT e m a
+  lift = EitherT . liftM Right

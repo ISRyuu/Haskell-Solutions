@@ -1,3 +1,7 @@
+{-# LANGUAGE InstanceSigs #-}
+
+import Control.Monad.Trans.Class
+import Control.Monad
 import Control.Applicative
 
 newtype StateT s m a =
@@ -21,3 +25,7 @@ instance Monad m => Monad (StateT s m) where
     StateT $ \s -> do
       (a, s') <- sma s
       runStateT (f a) s'
+
+instance MonadTrans (StateT s) where
+  lift :: Monad m => m a -> StateT s m a
+  lift ma = StateT $ \s -> (flip (,) $ s) <$> ma
